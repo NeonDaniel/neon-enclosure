@@ -12,11 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import time
+
 from collections import namedtuple
 from threading import Lock
 from mycroft_bus_client import MessageBusClient, Message
 from ovos_utils.log import LOG
 from neon_utils.configuration_utils import get_mycroft_compatible_config
+
+from mycroft.util import connected
 
 
 Namespace = namedtuple('Namespace', ['name', 'pages'])
@@ -102,6 +106,7 @@ class Enclosure:
         self.bus.on("gui.clear.namespace", self.on_gui_delete_namespace)
         self.bus.on("gui.event.send", self.on_gui_send_event)
         self.bus.on("gui.status.request", self.handle_gui_status_request)
+        self.bus.once('mycroft.skills.trained', self.is_device_ready)
 
     def run(self):
         """Start the Enclosure after it has been constructed."""
@@ -112,6 +117,43 @@ class Enclosure:
     def stop(self):
         """Perform any enclosure shutdown processes."""
         pass
+
+    def check_services_ready(self, services):
+        """Report if all specified services are ready.
+
+        services (iterable): service names to check.
+        """
+        for ser in services:
+            services[ser] = False
+            response = self.bus.wait_for_response(Message(
+                'mycroft.{}.is_ready'.format(ser)))
+            if response and response.data['status']:
+                services[ser] = True
+        return all([services[ser] for ser in services])
+
+    def is_device_ready(self, message):
+        is_ready = True
+        # Bus service assumed to be alive if messages sent and received
+        # Enclosure assumed to be alive if this method is running
+        # services = {'audio': False, 'speech': False, 'skills': False}
+        # start = time.monotonic()
+        # while not is_ready:
+        #     is_ready = self.check_services_ready(services)
+        #     if is_ready:
+        #         break
+        #     elif time.monotonic() - start >= 60:
+        #         raise Exception('Timeout waiting for services start.')
+        #     else:
+        #         time.sleep(3)
+
+        # if is_ready:
+        LOG.info("All Mycroft Services have reported ready.")
+        if connected():
+            self.bus.emit(Message('mycroft.ready'))
+        else:
+            self.bus.emit(Message('mycroft.wifi.setup'))
+
+        return is_ready
 
     ######################################################################
     # GUI client API

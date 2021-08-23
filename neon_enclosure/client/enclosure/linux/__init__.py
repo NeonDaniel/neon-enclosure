@@ -118,31 +118,6 @@ class EnclosureLinux(Enclosure):
         """
         self.audio_system.set_volume(self._pre_duck_level)
 
-    def is_device_ready(self, message):
-        # Bus service assumed to be alive if messages sent and received
-        # Enclosure assumed to be alive if this method is running
-        services = {'audio': False, 'speech': False, 'skills': False}
-        is_ready = self.check_services_ready(services)
-
-        if is_ready:
-            LOG.info("Mycroft is all loaded and ready to roll!")
-            self.bus.emit(Message('mycroft.ready'))
-
-        return is_ready
-
-    def check_services_ready(self, services):
-        """Report if all specified services are ready.
-
-        services (iterable): service names to check.
-        """
-        for ser in services:
-            services[ser] = False
-            response = self.bus.wait_for_response(Message(
-                                'mycroft.{}.is_ready'.format(ser)), timeout=60)
-            if response and response.data['status']:
-                services[ser] = True
-        return all([services[ser] for ser in services])
-
     def on_no_internet(self, event=None):
         if connected():
             # One last check to see if connection was established
