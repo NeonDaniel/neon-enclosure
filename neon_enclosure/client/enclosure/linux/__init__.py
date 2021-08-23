@@ -50,8 +50,6 @@ class EnclosureLinux(Enclosure):
             self.audio_system = AlsaAudio()
         # Notifications from mycroft-core
         self.bus.on('enclosure.notify.no_internet', self.on_no_internet)
-        # TODO: this requires the Enclosure to be up and running before the training is complete.
-        self.bus.on('mycroft.skills.trained', self.is_device_ready)
 
         self._define_event_handlers()
         self._default_duck = 0.3
