@@ -7,11 +7,11 @@ ADD . /neon_enclosure
 WORKDIR /neon_enclosure
 
 RUN apt update && \
+    export CFLAGS="-fcommon" && \
     apt install -y pulseaudio && \
+    pip install wheel && \
     pip install \
-    wheel \
     holmesV \
-    pulse \
     .
 
 RUN useradd -ms /bin/bash neon
@@ -19,7 +19,8 @@ USER neon
 
 COPY docker_overlay/asoundrc /home/neon/.asoundrc
 
-RUN mkdir -p /home/neon/.config/neon && \
+RUN mkdir -p /home/neon/.config/pulse && \
+    mkdir -p /home/neon/.config/neon && \
     mkdir -p /home/neon/.local/share/neon
 
 CMD ["neon_enclosure_client"]
